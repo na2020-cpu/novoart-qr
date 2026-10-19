@@ -76,7 +76,6 @@ button.secondary { background: #555; }
 </style>
 </head>
 <body>
-
 <header>
   <h1>NOVOART</h1>
   <p>25 años nos respaldan</p>
@@ -111,24 +110,22 @@ button.secondary { background: #555; }
   <textarea id="descripcion" placeholder="Detalles adicionales del artículo"></textarea>
 
   <label for="foto">Fotografía (URL pública)</label>
-  <input id="foto" type="url" placeholder="https://...">
+  <input id="foto" type="url" placeholder="Pega aquí el enlace normal de GitHub">
+
   <p class="nota">
-    La fotografía debe estar alojada en internet mediante un enlace
-    directo y público. No se necesita base de datos.
+    Puedes pegar el enlace normal de una fotografía de GitHub.
+    NOVOART convertirá automáticamente el enlace para mostrar la imagen.
   </p>
 
   <button type="button" onclick="generarQR()">GENERAR QR</button>
 
   <p id="mensaje" role="status"></p>
-
   <div id="resultado" hidden>
     <h3 style="text-align:center">QR DEL ARTÍCULO</h3>
     <div id="qr"></div>
     <button type="button" onclick="descargarQR()">DESCARGAR QR</button>
     <button type="button" class="secondary" onclick="abrirFicha()">VER FICHA</button>
-    <p class="nota">
-      Guarda el QR y pruébalo desde otro celular.
-    </p>
+    <p class="nota">Guarda el QR y pruébalo desde otro celular.</p>
   </div>
 </section>
 
@@ -172,7 +169,7 @@ button.secondary { background: #555; }
     <strong>Fotografía</strong>
     <img id="fotoFicha" alt="Fotografía del artículo" hidden>
     <p id="errorFoto" class="nota" hidden>
-      No se pudo cargar la fotografía. Verifica que el enlace sea público.
+      No se pudo cargar la fotografía. Verifica que el enlace sea público y que el archivo exista.
     </p>
   </div>
 </section>
@@ -193,6 +190,36 @@ function valor(id) {
   return document.getElementById(id).value.trim();
 }
 
+/* Convierte enlaces normales de GitHub a enlaces directos de imágenes. */
+function imagenSegura(enlace) {
+  if (!enlace) return "";
+
+  try {
+    const url = new URL(enlace.trim());
+
+    if (!["http:", "https:"].includes(url.protocol)) {
+      return "";
+    }
+
+    if (
+      url.hostname.toLowerCase() === "github.com" &&
+      url.pathname.includes("/blob/")
+    ) {
+      url.hostname = "raw.githubusercontent.com";
+      url.pathname = url.pathname.replace(
+        /^\/([^/]+)\/([^/]+)\/blob\//,
+        "/$1/$2/"
+      );
+      url.search = "";
+      url.hash = "";
+    }
+
+    return url.href;
+  } catch (error) {
+    return "";
+  }
+}
+
 function generarQR() {
   const mensaje = document.getElementById("mensaje");
   mensaje.textContent = "";
@@ -200,7 +227,8 @@ function generarQR() {
   for (const [id, nombre] of campos) {
     if (id !== "descripcion" && !valor(id)) {
       document.getElementById(id).focus();
-      mensaje.textContent = "Completa todos los campos obligatorios marcados con *.";
+      mensaje.textContent =
+        "Completa todos los campos obligatorios marcados con *.";
       return;
     }
   }
@@ -217,23 +245,20 @@ function generarQR() {
     return;
   }
 
-  const foto = valor("foto");
-  if (foto) {
-    try {
-      const urlFoto = new URL(foto);
-      if (!["http:", "https:"].includes(urlFoto.protocol)) {
-        throw new Error("URL inválida");
-      }
-    } catch (e) {
-      mensaje.textContent = "La URL de la fotografía no es válida.";
-      return;
-    }
+  const fotoOriginal = valor("foto");
+  const foto = imagenSegura(fotoOriginal);
+
+  if (fotoOriginal && !foto) {
+    mensaje.textContent = "La URL de la fotografía no es válida.";
+    return;
   }
 
   const datos = new URLSearchParams();
+
   for (const [id, nombre] of campos) {
     datos.set(nombre, valor(id));
   }
+
   if (foto) datos.set("foto", foto);
 
   const base = window.location.href.split("#")[0].split("?")[0];
@@ -258,7 +283,7 @@ function generarQR() {
 
     window.enlaceQR = enlace;
     mensaje.textContent = "QR generado correctamente.";
-  } catch (e) {
+  } catch (error) {
     mensaje.textContent = "No se pudo generar el QR. Intenta nuevamente.";
   }
 }
@@ -289,7 +314,9 @@ function descargarQR() {
 
 function mostrarFecha(fecha) {
   if (!fecha) return "";
+
   const partes = fecha.split("-");
+
   return partes.length === 3
     ? partes[2] + "/" + partes[1] + "/" + partes[0]
     : fecha;
@@ -318,35 +345,39 @@ function cargarFicha() {
 
   document.getElementById("vEntrega").textContent =
     mostrarFecha(params.get("entrega"));
+
   document.getElementById("vInicio").textContent =
     mostrarFecha(params.get("inicio"));
 
   const descripcion = params.get("descripcion") || "";
   document.getElementById("bloqueDescripcion").hidden = !descripcion;
 
-  const foto = params.get("foto") || "";
-  document.getElementById("bloqueFoto").hidden = !foto;
+  const fotoOriginal = params.get("foto") || "";
+  const foto = imagenSegura(fotoOriginal);
 
-  if (foto) {
-    try {
-      const url = new URL(foto);
-      if (!["http:", "https:"].includes(url.protocol)) {
-        throw new Error("URL inválida");
-      }
+  document.getElementById("bloqueFoto").hidden = !fotoOriginal;
 
-      const img = document.getElementById("fotoFicha");
-      img.onload = () => {
-        img.hidden = false;
-        document.getElementById("errorFoto").hidden = true;
-      };
-      img.onerror = () => {
-        img.hidden = true;
-        document.getElementById("errorFoto").hidden = false;
-      };
-      img.src = url.href;
-    } catch (e) {
-      document.getElementById("errorFoto").hidden = false;
+  if (fotoOriginal) {
+    const img = document.getElementById("fotoFicha");
+    const error = document.getElementById("errorFoto");
+
+    if (!foto) {
+      img.hidden = true;
+      error.hidden = false;
+      return;
     }
+
+    img.onload = () => {
+      img.hidden = false;
+      error.hidden = true;
+    };
+
+    img.onerror = () => {
+      img.hidden = true;
+      error.hidden = false;
+    };
+
+    img.src = foto;
   }
 }
 
