@@ -3,535 +3,185 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOVOART | Identificación de piezas</title>
+<title>NOVOART | Generador QR</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-:root {
-  --azul: #183747;
-  --dorado: #b69a65;
-  --fondo: #f3f5f6;
-  --texto: #25323a;
-}
-* { box-sizing: border-box; }
 body {
-  margin: 0;
-  background: var(--fondo);
-  color: var(--texto);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Arial, sans-serif;
+  max-width: 650px;
+  margin: 25px auto;
+  padding: 20px;
+  background: #f4f4f4;
+  color: #222;
 }
-header {
-  background: var(--azul);
-  color: white;
-  padding: 25px 18px;
-  text-align: center;
-  border-bottom: 5px solid var(--dorado);
-}
-header h1 { margin: 0 0 8px; letter-spacing: 3px; }
-header p { margin: 0; color: #e5e9eb; }
-main {
-  width: min(900px, 94%);
-  margin: 24px auto;
-}
-.panel {
+h1 { text-align: center; }
+.logo { text-align: center; letter-spacing: 4px; }
+.card {
   background: white;
-  padding: 22px;
-  margin-bottom: 20px;
-  border-radius: 10px;
-  box-shadow: 0 3px 14px #152b3510;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 18px;
 }
-h2 {
-  color: var(--azul);
-  font-size: 20px;
-  margin-top: 0;
-}
-h3 { color: var(--azul); }
-label {
-  display: block;
-  font-size: 14px;
-  font-weight: bold;
-  margin: 15px 0 6px;
-}
-input, textarea, select {
+input, textarea {
   width: 100%;
+  box-sizing: border-box;
   padding: 11px;
-  border: 1px solid #cbd3d8;
+  margin: 7px 0 14px;
+  border: 1px solid #ccc;
   border-radius: 6px;
-  font: inherit;
-  background: white;
-}
-textarea { min-height: 90px; resize: vertical; }
-.grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 16px;
 }
 button {
+  padding: 12px;
+  width: 100%;
+  margin: 5px 0;
   border: 0;
   border-radius: 6px;
-  padding: 12px 16px;
-  margin: 10px 6px 0 0;
-  background: var(--azul);
+  background: #222;
   color: white;
-  font-weight: bold;
   cursor: pointer;
 }
-button.secundario { background: #687781; }
-button.dorado { background: #927545; }
-button:disabled { opacity: .5; cursor: not-allowed; }
-.nota {
-  background: #f8f4e9;
-  border-left: 4px solid var(--dorado);
-  padding: 12px;
-  font-size: 14px;
-  line-height: 1.5;
-}
-#resultado { display: none; }
-#qr {
-  display: flex;
-  justify-content: center;
-  padding: 15px;
-  margin: 12px auto;
-  overflow-wrap: anywhere;
-}
-#qr img, #qr canvas { max-width: 100%; height: auto; }
-.enlace {
-  overflow-wrap: anywhere;
-  font-size: 13px;
-  background: #f0f3f4;
-  padding: 12px;
-  border-radius: 5px;
-}
-.ficha-campo {
-  border-bottom: 1px solid #e4e8ea;
-  padding: 10px 0;
-  overflow-wrap: anywhere;
-}
-.ficha-campo strong {
-  display: block;
-  color: #52616a;
-  font-size: 12px;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-.galeria {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-  margin-top: 12px;
-}
-.galeria img {
-  width: 100%;
-  max-height: 300px;
-  object-fit: contain;
-  background: #f1f3f4;
-  border-radius: 6px;
-}
-.pie {
-  text-align: center;
-  color: #71808a;
-  font-size: 12px;
-  padding: 20px;
-}
-@media (max-width: 600px) {
-  .grid { grid-template-columns: 1fr; }
-  .panel { padding: 16px; }
-}
-@media print {
-  body { background: white; }
-  header, #formulario, .no-print, .pie { display: none !important; }
-  main { width: 100%; margin: 0; }
-  .panel { box-shadow: none; border: 0; }
-  #resultado { display: block !important; }
-}
+img { max-width: 100%; }
+#qr { display: flex; justify-content: center; margin: 20px; }
+label { font-weight: bold; }
 </style>
 </head>
-
 <body>
-<header>
-  <h1>NOVOART</h1>
-  <p>Identificación y seguimiento de piezas</p>
-</header>
 
-<main>
-  <section id="formulario" class="panel">
-    <h2>Generador de QR por pieza</h2>
-    <p>Captura una ficha por cada pieza física que quieras identificar.</p>
+<div class="logo"><h1>NOVOART</h1>
+<p>25 años nos respaldan</p></div>
 
-    <div class="nota">
-      <strong>Importante:</strong> si una obra lleva 8 sillas iguales,
-      cada silla debe tener su propio QR y número individual.
-      Por ejemplo: pieza 1 de 8, pieza 2 de 8, etc.
-    </div>
+<div id="ficha" class="card" hidden>
+  <h2 id="nombrePublico"></h2>
+  <img id="fotoPublica" alt="Fotografía del mueble" hidden>
+  <p><b>Clave:</b> <span id="clavePublica"></span></p>
+  <p><b>Descripción:</b> <span id="descripcionPublica"></span></p>
+  <p><b>Medidas:</b> <span id="medidasPublicas"></span></p>
+  <p><b>Precio:</b> <span id="precioPublico"></span></p>
+</div>
 
-    <form id="formQR">
-      <div class="grid">
-        <div>
-          <label for="obra">Nombre de la obra *</label>
-          <input id="obra" required placeholder="Ej. Residencia Oasis">
-        </div>
-        <div>
-          <label for="item">Código de ítem *</label>
-          <input id="item" required placeholder="Ej. COC-015">
-        </div>
-        <div>
-          <label for="clave">Clave de producto</label>
-          <input id="clave" placeholder="Ej. NOV-COC-015">
-        </div>
-        <div>
-          <label for="nombre">Nombre del mueble o pieza *</label>
-          <input id="nombre" required placeholder="Ej. Silla de comedor">
-        </div>
-        <div>
-          <label for="pieza">Número de pieza individual *</label>
-          <input id="pieza" required type="number" min="1" step="1"
-                 placeholder="Ej. 1">
-        </div>
-        <div>
-          <label for="total">Número total de piezas del ítem *</label>
-          <input id="total" required type="number" min="1" step="1"
-                 placeholder="Ej. 8">
-        </div>
-        <div>
-          <label for="responsable">Responsable *</label>
-          <input id="responsable" required placeholder="Nombre del responsable">
-        </div>
-        <div>
-          <label for="tono">Tono de color autorizado *</label>
-          <input id="tono" required placeholder="Ej. Encino natural mate">
-        </div>
-        <div>
-          <label for="inicio">Fecha de inicio de carpintería</label>
-          <input id="inicio" type="date">
-        </div>
-        <div>
-          <label for="entrega">Fecha de entrega programada</label>
-          <input id="entrega" type="date">
-        </div>
-      </div>
+<div id="generador" class="card">
+  <h2>Generador de QR</h2>
 
-      <label for="descripcion">Descripción y medidas</label>
-      <textarea id="descripcion"
-        placeholder="Materiales, largo, ancho, alto, observaciones..."></textarea>
+  <label>Nombre del mueble</label>
+  <input id="nombre" placeholder="Ej. Credenza de cedro">
 
-      <label for="fotos">Fotografías del mueble (URLs públicas)</label>
-      <textarea id="fotos"
-        placeholder="Pega una URL por línea. Puedes incluir varias fotografías."></textarea>
-      <p class="nota">
-        Usa enlaces HTTPS directos a imágenes que se puedan abrir sin iniciar sesión.
-        Las fotos guardadas solamente en tu computadora no aparecerán en la ficha pública.
-      </p>
+  <label>Clave del artículo</label>
+  <input id="clave" placeholder="Ej. NOV-001">
 
-      <label for="fotoTono">Fotografía de referencia del tono autorizado (URL pública)</label>
-      <input id="fotoTono" type="url"
-             placeholder="https://...">
+  <label>Descripción</label>
+  <textarea id="descripcion" placeholder="Descripción del mueble"></textarea>
 
-      <label for="observaciones">Observaciones de producción</label>
-      <textarea id="observaciones"
-        placeholder="Detalles importantes para fabricar o revisar la pieza..."></textarea>
+  <label>Medidas</label>
+  <input id="medidas" placeholder="Ej. 180 x 45 x 80 cm">
 
-      <button type="submit">Generar QR y ficha pública</button>
-      <button type="reset" class="secundario">Limpiar formulario</button>
-    </form>
-  </section>
+  <label>Precio</label>
+  <input id="precio" placeholder="Ej. $13,999 MXN">
 
-  <section id="resultado" class="panel">
-    <h2>QR de identificación</h2>
-    <div id="resumen"></div>
+  <label>URL pública de la fotografía</label>
+  <input id="foto" type="url" placeholder="https://...">
+
+  <button onclick="generarQR()">GENERAR QR</button>
+
+  <div id="resultado" hidden>
+    <h3 style="text-align:center">QR DEL ARTÍCULO</h3>
     <div id="qr"></div>
-    <p class="nota">
-      Este código identifica una sola pieza física. Escanéalo para abrir su ficha.
-      Guarda la imagen del QR o imprímela y colócala en la pieza correspondiente.
-    </p>
-    <div class="enlace" id="urlPublica"></div>
-    <div class="no-print">
-      <button id="descargar">Descargar imagen QR</button>
-      <button id="copiar" class="secundario">Copiar enlace público</button>
-      <button id="abrir" class="secundario">Abrir ficha pública</button>
-      <button id="imprimirQR" class="dorado">Imprimir QR</button>
-      <button id="nueva" class="secundario">Crear otro QR</button>
-    </div>
-  </section>
-
-  <section id="ficha" class="panel" style="display:none">
-    <h2>Ficha pública de pieza</h2>
-    <div id="datosFicha"></div>
-    <div class="no-print">
-      <button onclick="window.print()">Imprimir ficha</button>
-    </div>
-  </section>
-</main>
-
-<div class="pie">NOVOART · Control e identificación de piezas</div>
+    <button onclick="descargarQR()">DESCARGAR QR</button>
+    <button onclick="abrirFicha()">VER FICHA PÚBLICA</button>
+  </div>
+  <p id="mensaje"></p>
+</div>
 
 <script>
-const $ = id => document.getElementById(id);
+const parametros = new URLSearchParams(window.location.search);
+const esFicha = parametros.has("clave") || parametros.has("nombre");
 
-let enlaceActual = "";
-let qrActual = null;
+if (esFicha) {
+  document.getElementById("generador").hidden = true;
+  document.getElementById("ficha").hidden = false;
 
-function codificar(objeto) {
-  const bytes = new TextEncoder().encode(JSON.stringify(objeto));
-  let binario = "";
-  bytes.forEach(b => binario += String.fromCharCode(b));
-  return btoa(binario)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
-}
+  document.getElementById("nombrePublico").textContent =
+    parametros.get("nombre") || "Artículo NOVOART";
+  document.getElementById("clavePublica").textContent =
+    parametros.get("clave") || "";
+  document.getElementById("descripcionPublica").textContent =
+    parametros.get("descripcion") || "";
+  document.getElementById("medidasPublicas").textContent =
+    parametros.get("medidas") || "";
+  document.getElementById("precioPublico").textContent =
+    parametros.get("precio") || "";
 
-function decodificar(texto) {
-  let base64 = texto.replace(/-/g, "+").replace(/_/g, "/");
-  while (base64.length % 4) base64 += "=";
-  const binario = atob(base64);
-  const bytes = Uint8Array.from(binario, c => c.charCodeAt(0));
-  return JSON.parse(new TextDecoder().decode(bytes));
-}
-
-function escapar(texto) {
-  return String(texto ?? "").replace(/[&<>"']/g, caracter => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  })[caracter]);
-}
-
-function campo(etiqueta, valor) {
-  if (valor === undefined || valor === null || String(valor).trim() === "") return "";
-  return `<div class="ficha-campo">
-    <strong>${escapar(etiqueta)}</strong>
-    <div>${escapar(valor).replace(/\n/g, "<br>")}</div>
-  </div>`;
-}
-
-function imagenSegura(url) {
-  try {
-    const u = new URL(url);
-    return u.protocol === "https:" ? u.href : "";
-  } catch {
-    return "";
+  const foto = parametros.get("foto");
+  if (foto) {
+    try {
+      const url = new URL(foto);
+      if (url.protocol === "https:" || url.protocol === "http:") {
+        const imagen = document.getElementById("fotoPublica");
+        imagen.src = url.href;
+        imagen.hidden = false;
+      }
+    } catch (e) {}
   }
 }
 
-function mostrarFicha(d) {
-  $("formulario").style.display = "none";
-  $("resultado").style.display = "none";
-  $("ficha").style.display = "block";
+let enlaceFicha = "";
 
-  const codigoPieza = ${d.item}-P${String(d.pieza).padStart(3, "0")};
+function generarQR() {
+  const nombre = document.getElementById("nombre").value.trim();
+  const clave = document.getElementById("clave").value.trim();
+  const descripcion = document.getElementById("descripcion").value.trim();
+  const medidas = document.getElementById("medidas").value.trim();
+  const precio = document.getElementById("precio").value.trim();
+  const foto = document.getElementById("foto").value.trim();
 
-  let html = `
-    <div class="nota">
-      <strong>NOVOART · ${escapar(codigoPieza)}</strong><br>
-      Pieza ${escapar(d.pieza)} de ${escapar(d.total)}
-    </div>
-  `;
-
-  html += campo("Código individual", codigoPieza);
-  html += campo("Obra", d.obra);
-  html += campo("Código de ítem", d.item);
-  html += campo("Clave de producto", d.clave);
-  html += campo("Mueble o pieza", d.nombre);
-  html += campo("Número de pieza individual", d.pieza);
-  html += campo("Total de piezas del ítem", d.total);
-  html += campo("Responsable", d.responsable);
-  html += campo("Inicio de carpintería", d.inicio);
-  html += campo("Entrega programada", d.entrega);
-  html += campo("Tono autorizado", d.tono);
-  html += campo("Descripción y medidas", d.descripcion);
-  html += campo("Observaciones de producción", d.observaciones);
-
-  const fotos = Array.isArray(d.fotos) ? d.fotos : [];
-  const fotosValidas = fotos.map(imagenSegura).filter(Boolean);
-  const tonoValido = imagenSegura(d.fotoTono || "");
-
-  if (fotosValidas.length) {
-    html += <h3>Fotografías del mueble</h3><div class="galeria">;
-    fotosValidas.forEach(url => {
-      html += `<a href="${escapar(url)}" target="_blank" rel="noopener">
-        <img src="${escapar(url)}" alt="Fotografía del mueble" loading="lazy">
-      </a>`;
-    });
-    html += </div>;
-  }
-
-  if (tonoValido) {
-    html += `<h3>Referencia del tono autorizado</h3>
-      <div class="galeria">
-        <a href="${escapar(tonoValido)}" target="_blank" rel="noopener">
-          <img src="${escapar(tonoValido)}" alt="Referencia del tono autorizado" loading="lazy">
-        </a>
-      </div>`;
-  }
-
-  $("datosFicha").innerHTML = html;
-}
-
-$("formQR").addEventListener("submit", function(event) {
-  event.preventDefault();
-
-  if (typeof QRCode === "undefined") {
-    alert("No se pudo cargar el generador QR. Verifica tu conexión a Internet e inténtalo de nuevo.");
+  if (!nombre || !clave) {
+    document.getElementById("mensaje").textContent =
+      "Escribe al menos el nombre y la clave del artículo.";
     return;
   }
 
-  const pieza = Number($("pieza").value);
-  const total = Number($("total").value);
-
-  if (!Number.isInteger(pieza) || !Number.isInteger(total) ||
-      pieza < 1 || total < 1 || pieza > total) {
-    alert("El número de pieza debe ser entero y estar entre 1 y el total de piezas.");
+  if (!window.location.protocol.startsWith("http")) {
+    document.getElementById("mensaje").textContent =
+      "Primero publica este archivo en GitHub Pages y abre su enlace web.";
     return;
   }
 
-  const fotos = $("fotos").value
-    .split(/\n/)
-    .map(url => url.trim())
-    .filter(Boolean);
+  const base = window.location.href.split("?")[0].split("#")[0];
+  const datos = new URLSearchParams({
+    nombre, clave, descripcion, medidas, precio
+  });
+  if (foto) datos.set("foto", foto);
 
-  const urlsInvalidas = fotos.filter(url => !imagenSegura(url));
-  if (urlsInvalidas.length || ($("fotoTono").value.trim() &&
-      !imagenSegura($("fotoTono").value.trim()))) {
-    alert("Las fotografías deben tener enlaces HTTPS válidos.");
-    return;
-  }
+  enlaceFicha = base + "?" + datos.toString();
 
-  const d = {
-    version: 1,
-    obra: $("obra").value.trim(),
-    item: $("item").value.trim(),
-    clave: $("clave").value.trim(),
-    nombre: $("nombre").value.trim(),
-    pieza,
-    total,
-    responsable: $("responsable").value.trim(),
-    inicio: $("inicio").value,
-    entrega: $("entrega").value,
-    tono: $("tono").value.trim(),
-    descripcion: $("descripcion").value.trim(),
-    fotos,
-    fotoTono: $("fotoTono").value.trim(),
-    observaciones: $("observaciones").value.trim()
-  };
+  document.getElementById("qr").innerHTML = "";
+  document.getElementById("resultado").hidden = false;
+  document.getElementById("mensaje").textContent = "";
 
-  const identificador = ${d.item}-P${String(d.pieza).padStart(3, "0")};
-  const urlBase = location.href.split("#")[0];
-  enlaceActual = urlBase + "#ficha=" + codificar(d);
-
-  $("resumen").innerHTML =
-    `<p><strong>${escapar(d.nombre)}</strong><br>
-    Obra: ${escapar(d.obra)}<br>
-    Identificación individual: ${escapar(identificador)}<br>
-    Pieza ${d.pieza} de ${d.total}</p>`;
-
-  $("urlPublica").textContent = enlaceActual;
-  $("qr").innerHTML = "";
-  $("resultado").style.display = "block";
-  $("ficha").style.display = "none";
-
-  qrActual = new QRCode($("qr"), {
-    text: enlaceActual,
+  new QRCode(document.getElementById("qr"), {
+    text: enlaceFicha,
     width: 280,
     height: 280,
     correctLevel: QRCode.CorrectLevel.M
   });
-
-  $("resultado").scrollIntoView({ behavior: "smooth" });
-});
-
-$("descargar").addEventListener("click", function() {
-  const imagen = $("qr").querySelector("img");
-  const canvas = $("qr").querySelector("canvas");
-  let url = "";
-
-  if (imagen && imagen.src) {
-    url = imagen.src;
-  } else if (canvas) {
-    url = canvas.toDataURL("image/png");
-  }
-
-  if (!url) {
-    alert("El QR todavía no está listo.");
-    return;
-  }
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "NOVOART-QR.png";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-});
-
-$("copiar").addEventListener("click", async function() {
-  try {
-    await navigator.clipboard.writeText(enlaceActual);
-    alert("Enlace copiado.");
-  } catch {
-    prompt("Copia este enlace:", enlaceActual);
-  }
-});
-
-$("abrir").addEventListener("click", function() {
-  window.open(enlaceActual, "_blank", "noopener");
-});
-
-$("imprimirQR").addEventListener("click", function() {
-  const imagen = $("qr").querySelector("img");
-  const canvas = $("qr").querySelector("canvas");
-  const fuente = imagen ? imagen.src : canvas ? canvas.toDataURL("image/png") : "";
-
-  if (!fuente) {
-    alert("Genera el QR primero.");
-    return;
-  }
-
-  const ventana = window.open("", "_blank");
-  if (!ventana) {
-    alert("Permite las ventanas emergentes para imprimir.");
-    return;
-  }
-
-  ventana.document.write(`<!DOCTYPE html><html><head>
-    <title>QR NOVOART</title><meta charset="UTF-8">
-    <style>body{font-family:Arial;text-align:center;padding:25px}
-    img{width:280px;height:280px;max-width:90%}
-    </style></head><body>
-    <h2>NOVOART</h2><p>${escapar($("resumen").innerText)}</p>
-    <img src="${fuente}" alt="QR NOVOART">
-    <script>window.onload=function(){window.print()}<\/script>
-    </body></html>`);
-  ventana.document.close();
-});
-
-$("nueva").addEventListener("click", function() {
-  $("formQR").reset();
-  $("resultado").style.display = "none";
-  $("formulario").style.display = "block";
-  $("ficha").style.display = "none";
-  $("formulario").scrollIntoView({ behavior: "smooth" });
-});
-
-function cargarDesdeEnlace() {
-  const hash = location.hash;
-  if (!hash.startsWith("#ficha=")) return;
-
-  try {
-    const datos = decodificar(hash.substring(7));
-    if (!datos || datos.version !== 1 || !datos.obra || !datos.item) {
-      throw new Error("Ficha no válida");
-    }
-    mostrarFicha(datos);
-  } catch (error) {
-    $("formulario").style.display = "none";
-    $("ficha").style.display = "block";
-    $("datosFicha").textContent =
-      "No se pudo leer esta ficha. Verifica que el QR o el enlace estén completos.";
-  }
 }
 
-cargarDesdeEnlace();
+function descargarQR() {
+  const lienzo = document.querySelector("#qr canvas");
+  const imagen = document.querySelector("#qr img");
+  const url = lienzo ? lienzo.toDataURL("image/png") :
+              imagen ? imagen.src : "";
+
+  if (!url) return;
+
+  const enlace = document.createElement("a");
+  enlace.href = url;
+  enlace.download = "QR_NOVOART.png";
+  enlace.click();
+}
+
+function abrirFicha() {
+  if (enlaceFicha) window.open(enlaceFicha, "_blank");
+}
 </script>
 </body>
 </html>
