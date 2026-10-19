@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NOVOART QR | Generador de muebles</title>
+<style>
+:root{--ink:#202323;--cream:#f5f2ec;--line:#ddd8ce;--muted:#666}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.45 Arial,Helvetica,sans-serif}
+header{background:var(--ink);color:#fff;padding:22px max(18px,calc((100% - 1050px)/2))}
+header strong{letter-spacing:.22em;font-size:22px}header p{margin:7px 0 0;color:#ddd}
+main{max-width:1050px;margin:24px auto;padding:0 16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.85fr);gap:20px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 5px 20px #00000008}
+h1{font-size:23px;margin:0 0 6px}h2{font-size:18px;margin:0 0 14px}p.hint{color:var(--muted);font-size:13px;margin:0 0 16px}
+label{display:block;font-weight:700;font-size:13px;margin:12px 0 5px}
+input,textarea{width:100%;border:1px solid #c9c5bc;border-radius:9px;padding:11px;font:inherit;background:white}
+input[type=file]{padding:8px}button{border:0;border-radius:10px;padding:12px 15px;font-weight:700;cursor:pointer;font-size:14px}
+.primary{background:var(--ink);color:white;width:100%;margin-top:16px}.secondary{background:#eee9df;color:var(--ink)}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#preview{width:100%;max-height:280px;object-fit:contain;background:#f7f5f0;border-radius:10px;display:none;margin-top:12px}
+#qrcode{display:flex;justify-content:center;align-items:center;min-height:220px;margin:10px auto}
+#qrcode canvas,#qrcode img{max-width:100%;height:auto!important}
+.note{background:#f8f5ed;border-left:4px solid #b79d73;padding:11px 12px;font-size:13px;margin-top:14px}
+#card{display:none;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+#card img{width:100%;max-height:320px;object-fit:contain;background:#f5f2ec}
+.details{padding:16px}.brand{font-size:11px;letter-spacing:.18em;color:#777}.itemtitle{font-size:22px;font-weight:700;margin:7px 0 12px}
+.datum{padding:9px 0;border-top:1px solid #eee;display:grid;grid-template-columns:1fr 1.25fr;gap:10px}.datum span:first-child{font-size:12px;color:#777}.datum span:last-child{font-weight:600;overflow-wrap:anywhere}
+footer{text-align:center;color:#777;font-size:12px;padding:8px 16px 28px}
+@media(max-width:760px){main{grid-template-columns:1fr;margin:14px auto}.panel{padding:16px}header strong{font-size:19px}}
+</style>
+</head>
+<body>
+<header><strong>NOVOART</strong><p>Generador QR de muebles · Control de producción</p></header>
+<main>
+<section class="panel">
+<h1>Registrar un mueble</h1>
+<p class="hint">Captura los datos y genera un QR. No se guarda nada en una base de datos.</p>
+<form id="form">
+<label for="obra">Nombre de la obra *</label><input id="obra" required placeholder="Ej. Oasis">
+<label for="articulo">Artículo *</label><input id="articulo" required placeholder="Ej. Credenza de nogal">
+<label for="codigo">Código de ítem *</label><input id="codigo" required placeholder="Ej. OAS-CAR-001">
+<label for="entrega">Fecha de entrega del mueble *</label><input id="entrega" type="date" required>
+<label for="responsable">Responsable *</label><input id="responsable" required placeholder="Nombre del responsable">
+<label for="planos">Fecha de entrega de planos a producción *</label><input id="planos" type="date" required>
+<label for="foto">Fotografía del mueble *</label><input id="foto" type="file" accept="image/*" required>
+<img id="preview" alt="Vista previa de la fotografía">
+<label for="baseurl">Dirección pública de esta página (cuando esté publicada)</label>
+<input id="baseurl" type="url" placeholder="Ej. https://tuusuario.github.io/novoart-qr/">
+<p class="hint">Para que el QR funcione en otros teléfonos, esta página debe estar publicada en internet. La foto debe tener un enlace público; no se sube automáticamente desde este archivo.</p>
+<button class="primary" type="submit">Generar ficha y QR</button>
+</form>
+<div class="note"><b>Importante:</b> este archivo funciona localmente para preparar la ficha. Para que otras personas vean la ficha al escanear el QR, publica este HTML en un servicio de páginas estáticas y proporciona una URL pública de la fotografía. No introduzcas datos confidenciales.</div>
+</section>
+<section class="panel">
+<h2>Vista previa de ficha</h2>
+<div id="card">
+<img id="cardimg" alt="Fotografía del mueble">
+<div class="details">
+<div class="brand">NOVOART · FICHA DE MUEBLE</div>
+<div id="ctitle" class="itemtitle"></div>
+<div class="datum"><span>Nombre de la obra</span><span id="c-obra"></span></div>
+<div class="datum"><span>Artículo</span><span id="c-articulo"></span></div>
+<div class="datum"><span>Código de ítem</span><span id="c-codigo"></span></div>
+<div class="datum"><span>Fecha de entrega</span><span id="c-entrega"></span></div>
+<div class="datum"><span>Responsable</span><span id="c-responsable"></span></div>
+<div class="datum"><span>Entrega de planos a producción</span><span id="c-planos"></span></div>
+</div></div>
+<div id="qrcode"><span class="hint">Tu QR aparecerá aquí.</span></div>
+<div class="actions">
+<button class="secondary" id="downloadqr" type="button" disabled>Descargar QR PNG</button>
+<button class="secondary" id="print" type="button" disabled>Imprimir ficha</button>
+</div>
+<div class="note" id="status">El QR se generará después de completar el formulario. Para una ficha pública, la página y la imagen deben tener direcciones web accesibles.</div>
+</section>
+</main>
+<footer>NOVOART · Prototipo sin base de datos</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let qr=null, photoData=null, qrPayload="";
+$("foto").addEventListener("change",e=>{
+ const file=e.target.files&&e.target.files[0]; if(!file)return;
+ if(!file.type.startsWith("image/")){alert("Selecciona un archivo de imagen.");return;}
+ const reader=new FileReader();reader.onload=()=>{photoData=reader.result;$("preview").src=photoData;$("preview").style.display="block";};reader.readAsDataURL(file);
+});
+function prettyDate(v){if(!v)return "No registrada";const [y,m,d]=v.split("-");return `${d}/${m}/${y}`;}
+function fillCard(d,img){
+ $("card").style.display="block";$("cardimg").src=img||"";$("cardimg").style.display=img?"block":"none";
+ $("ctitle").textContent=d.articulo||"Ficha del mueble";
+ ["obra","articulo","codigo","entrega","responsable","planos"].forEach(k=>{
+   const val=d[k]||"No registrado";
+   $("c-"+k).textContent=(k==="entrega"||k==="planos")?prettyDate(val):val;
+ });
+}
+$("form").addEventListener("submit",e=>{
+ e.preventDefault();
+ const d={obra:$("obra").value.trim(),articulo:$("articulo").value.trim(),codigo:$("codigo").value.trim(),entrega:$("entrega").value,responsable:$("responsable").value.trim(),planos:$("planos").value};
+ fillCard(d,photoData);
+ const base=$("baseurl").value.trim();
+ const publicReady=base && /^https?:\/\//i.test(base);
+ // URL payload intentionally excludes the image bytes: large photos make QR codes impractical.
+ const u=new URL(publicReady?base:location.href.split("?")[0]);
+ u.searchParams.set("f",btoa(unescape(encodeURIComponent(JSON.stringify(d)))));
+ qrPayload=u.toString();
+ $("qrcode").innerHTML="";
+ try{
+   qr=new QRCode($("qrcode"),{text:qrPayload,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
+   $("downloadqr").disabled=false;$("print").disabled=false;
+   $("status").textContent=publicReady
+    ?"QR creado con los datos del mueble. Aún debes asegurar que la página publicada pueda leer el parámetro ?f= y que la foto tenga URL pública; este prototipo local no publica ni carga la fotografía."
+    :"QR de prueba creado. Como no ingresaste una URL pública, el QR no abrirá una ficha desde otros teléfonos. Publica primero este archivo y vuelve a generar el QR.";
+ }catch(err){$("status").textContent="No se pudo crear el QR. Comprueba tu conexión a internet para cargar la librería QR.";}
+});
+$("downloadqr").addEventListener("click",()=>{
+ const canvas=$("qrcode").querySelector("canvas"),img=$("qrcode").querySelector("img");
+ let url=canvas?canvas.toDataURL("image/png"):img?img.src:null;if(!url)return;
+ const a=document.createElement("a");a.href=url;a.download=($("codigo").value||"NOVOART-QR")+".png";a.click();
+});
+$("print").addEventListener("click",()=>window.print());
+/* If a ficha query is present, render the fields from it. The photo is not embedded in the QR. */
+(function(){
+ const p=new URLSearchParams(location.search).get("f");if(!p)return;
+ try{const d=JSON.parse(decodeURIComponent(escape(atob(p))));fillCard(d,null);$("form").style.display="none";$("qrcode").style.display="none";$("downloadqr").style.display="none";$("print").style.display="none";$("status").textContent="Ficha consultada. La fotografía necesita alojarse en una dirección pública para aparecer aquí.";}catch(e){}
+})();
+</script>
+</body>
+</html>
